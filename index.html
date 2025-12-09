@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabularia - Gamified Reading Platform</title>
+    <!-- Google Fonts: Poppins (English) and Cairo (Arabic) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS Variables --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --accent: #fbbf24;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --white: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        /* --- Background Setup --- */
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            position: relative;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* Arabic Specific Styles */
+        body.rtl {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body.rtl .logo span { letter-spacing: 0; }
+        body.rtl .logo img { margin-right: 0; margin-left: 10px; }
+        body.rtl .nav-links li { margin-left: 0; margin-right: 25px; }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('Reading scene.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.7; 
+            z-index: -1;
+            background-color: #f3f4f6;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Lang Button */
+        .lang-btn {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 15px;
+            margin-right: 10px;
+            font-size: 0.9rem;
+        }
+        
+        body.rtl .lang-btn { margin-right: 0; margin-left: 10px; }
+        .lang-btn:hover { background: var(--primary); color: white; }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 40px; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo img { height: 50px; width: auto; }
+        .logo span { font-size: 1.5rem; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
+
+        .nav-links { display: flex; }
+        .nav-links li { margin-left: 25px; }
+        .nav-links a { font-weight: 500; color: var(--text-light); transition: color 0.3s; position: relative; }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-actions { display: flex; align-items: center; }
+
+        /* --- Hero Section --- */
+        .hero { padding: 60px 0 80px; display: flex; align-items: center; min-height: 80vh; }
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
+        
+        .hero-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(5px);
+        }
+        .hero-content h1 { font-size: 2.8rem; line-height: 1.2; margin-bottom: 20px; color: var(--text-dark); }
+        .hero-content h1 span { color: var(--primary); }
+        .hero-content p { font-size: 1.125rem; color: var(--text-light); margin-bottom: 30px; }
+
+        .hero-image { display: flex; justify-content: center; align-items: center; }
+        .hero-image img, .hero-image video {
+            width: 100%; max-width: 550px; height: auto; border-radius: 20px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); transition: transform 0.3s ease;
+        }
+
+        /* --- Features Section --- */
+        .features { padding: 80px 0; }
+        .section-title { text-align: center; margin-bottom: 50px; }
+        .section-title-box {
+            background: rgba(255,255,255,0.9); display: inline-block;
+            padding: 20px 40px; border-radius: 15px; max-width: 100%;
+        }
+        .section-title h2 { font-size: 2.25rem; margin-bottom: 0px; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+
+        /* --- Flip Card --- */
+        .feature-card { background-color: transparent; height: 380px; perspective: 1000px; cursor: pointer; }
+        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.8s; transform-style: preserve-3d; }
+        .feature-card.flipped .card-inner { transform: rotateY(180deg); }
+        
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb; overflow: hidden; background-color: var(--white);
+        }
+        
+        .card-front { display: flex; flex-direction: column; }
+        .card-image-container { width: 100%; height: 250px; background-color: #f3f4f6; }
+        .card-image-container img { width: 100%; height: 100%; object-fit: cover; }
+        .card-front-content { padding: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; }
+        .card-front h3 { font-size: 1.25rem; margin-bottom: 5px; color: var(--text-dark); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .click-hint { font-size: 0.85rem; color: var(--primary); font-weight: 600; }
+
+        .card-back {
+            transform: rotateY(180deg); background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+            color: var(--text-dark); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px; border: 2px solid var(--primary);
+        }
+        .card-back h3 { color: var(--primary); margin-bottom: 10px; font-size: 1.3rem; }
+        .card-back p { font-size: 0.95rem; color: var(--text-light); line-height: 1.5; }
+        .card-back .back-icon { font-size: 1.8rem; color: var(--accent); margin-bottom: 10px; opacity: 0.8; }
+
+        /* --- About Section --- */
+        .about { background-color: var(--glass-bg); padding: 80px 0; text-align: center; backdrop-filter: blur(5px); }
+        .about-content { max-width: 900px; margin: 0 auto; }
+        .about-content p { margin-bottom: 25px; font-size: 1.1rem; color: var(--text-light); text-align: left; }
+        body.rtl .about-content p { text-align: right; }
+
+        /* --- Contact Section --- */
+        .contact {
+            padding: 80px 0;
+            background-color: var(--white);
+            position: relative;
+        }
+
+        .contact-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            gap: 50px;
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid #e5e7eb;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        body.rtl .form-group { text-align: right; }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .form-group input, 
+        .form-group textarea {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, 
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: #f9fafb;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .contact-info h3 { font-size: 1.5rem; margin-bottom: 15px; margin-top: 15px;}
+        .contact-info p { color: var(--text-light); margin-bottom: 20px; }
+
+        /* Social Media Buttons */
+        .contact-socials {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .social-btn:hover { transform: translateY(-3px); }
+
+        /* Brand Colors */
+        .btn-whatsapp { background-color: #25D366; }
+        .btn-youtube { background-color: #FF0000; }
+        .btn-facebook { background-color: #1877F2; }
+        .btn-instagram { background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d); }
+        .btn-tiktok { background-color: #000000; }
+
+        /* --- Footer --- */
+        footer { background-color: #111827; color: #d1d5db; padding: 50px 0 20px; margin-top: 0; }
+        .footer-grid { display: grid; grid-template-columns: 1.2fr 1.2fr 0.6fr; gap: 50px; margin-bottom: 40px; }
+        .footer-col h4 { color: var(--white); margin-bottom: 20px; }
+        .footer-col p { font-size: 0.95rem; line-height: 1.6; }
+        .social-links { display: flex; gap: 15px; margin-top: 15px; }
+        .copyright { text-align: center; border-top: 1px solid #374151; padding-top: 20px; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 30px; }
+            .hero-image { order: -1; }
+            .footer-grid { grid-template-columns: 1fr; gap: 30px; }
+            .contact-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .container { padding: 0 15px; }
+            .feature-card { height: 450px; }
+            .contact-container { padding: 20px; }
+            .social-btn { flex-grow: 1; justify-content: center; }
+        }
+    </style>
+</head>
+<body id="page-body">
+
+    <!-- HIDDEN AUDIO: Background Music -->
+    <audio id="bgMusic" loop>
+        <!-- FILENAME FIXED: background_music.mp3 -->
+        <source src="background_music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <nav>
+                <div class="nav-left">
+                    <a href="#" class="logo">
+                        <img src="logo.png" alt="Vocabularia Logo">
+                        <span data-i18n="brand_name">Vocabularia</span>
+                    </a>
+                    <ul class="nav-links">
+                        <li><a href="#library" data-i18n="nav_library">Library</a></li>
+                        <li><a href="#features" data-i18n="nav_features">Features</a></li>
+                        <li><a href="#community" data-i18n="nav_community">Community</a></li>
+                        <li><a href="#about" data-i18n="nav_about">About</a></li>
+                        <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-actions">
+                    <button class="btn lang-btn" onclick="toggleLanguage()" id="lang-btn">عربي</button>
+                    <a href="https://example.com/start" class="btn btn-primary" data-i18n="btn_start">Start Reading</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <h1 data-i18n="hero_title">Transform Learning Into An <br><span>Epic Adventure Game</span></h1>
+                    <p data-i18n="hero_desc">Students become heroes in Vocabularia, earning XP through reading, writing, speaking, and listening quests while battling monsters, collecting magical items, and leveling up from Novice Scribe to Supreme Word Wielder.</p>
+                    <a href="https://example.com/start" class="btn btn-primary" style="padding: 15px 35px; font-size: 1.1rem;" data-i18n="btn_join">Join the Quest</a>
+                </div>
+                
+                <div class="hero-image">
+                    <video id="hero-video" autoplay controls playsinline poster="Word Warrior male.png">
+                        <source src="hero-video.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title">
+                <div class="section-title-box">
+                    <h2 data-i18n="features_title">Why Choose Vocabularia?</h2>
+                </div>
+            </div>
+            <div class="features-grid">
+                <!-- Card 1 -->
+                <div class="feature-card" onclick="flipCard(this)" id="library">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="card-image-container">
+                                <img src="lore keeper female.png" alt="Lore Keeper">
+                            </div>
+                            <div class="card-front-content">
+                                <h3 data-i18n="card1_title">Complete Curriculum Integration</h3>
+                                <div class="click-hint"><i class="fa-solid fa-rotate"></i> <span data-i18n="hint_flip">Click to Flip</span></div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <i class="fa-solid fa-book-open back-icon"></i>
+                            <h3 data-i18n="card1_back_title">Standards Aligned</h3>
+                            <p data-i18n="card1_desc">Every quest aligns with standard learning objectives. Grammar worksheets become monster battles, essays turn into epic expeditions, all while meeting educational standards.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="feature-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="card-image-container">
+                                <img src="gamified process.png" alt="Gamification">
+                            </div>
+                            <div class="card-front-content">
+                                <h3 data-i18n="card2_title">Proven Engagement System</h3>
+                                <div class="click-hint"><i class="fa-solid fa-rotate"></i> <span data-i18n="hint_flip">Click to Flip</span></div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <i class="fa-solid fa-chart-line back-icon"></i>
+                            <h3 data-i18n="card2_back_title">Motivation</h3>
+                            <p data-i18n="card2_desc">Transform reluctant learners into motivated heroes. Students eagerly complete homework "quests" and participate in class "battles," turning ordinary assignments into exciting adventures they actually want to complete.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="feature-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="card-image-container">
+                                <img src="quest complete.png" alt="Achievements">
+                            </div>
+                            <div class="card-front-content">
+                                <h3 data-i18n="card3_title">Flexible & Scalable Design</h3>
+                                <div class="click-hint"><i class="fa-solid fa-rotate"></i> <span data-i18n="hint_flip">Click to Flip</span></div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <i class="fa-solid fa-trophy back-icon"></i>
+                            <h3 data-i18n="card3_back_title">Customizable</h3>
+                            <p data-i18n="card3_desc">Adapts to any classroom size, student level, or teaching style. Start simple with just XP and levels, then gradually add characters, monsters, and items as you grow comfortable with the system.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="feature-card" onclick="flipCard(this)" id="community">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="card-image-container">
+                                <img src="guild.png" alt="Guilds">
+                            </div>
+                            <div class="card-front-content">
+                                <h3 data-i18n="card4_title">Built-In Support & Recovery</h3>
+                                <div class="click-hint"><i class="fa-solid fa-rotate"></i> <span data-i18n="hint_flip">Click to Flip</span></div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <i class="fa-solid fa-users back-icon"></i>
+                            <h3 data-i18n="card4_back_title">No One Left Behind</h3>
+                            <p data-i18n="card4_desc">No student left behind with automatic redemption quests, peer mentorship systems, and scaffolded challenges. When students struggle, the game provides paths to success rather than punishing failure.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="section-title">
+                <h2 data-i18n="about_title">About The Platform</h2>
+            </div>
+            <div class="about-content">
+                <p data-i18n="about_p1">Vocabularia transforms traditional learning into an immersive role-playing game where students become Wielders in the magical realm of Vocabularia. Every classroom activity earns experience points that help students level up, unlock special abilities, and collect powerful items.</p>
+                <p data-i18n="about_p2">Choose from six character classes like Scholar Mage or Dialogue Diplomat, each with unique strengths. Battle monsters representing learning challenges, complete epic weekly quests, and develop your character through a sophisticated stat system. The game includes built-in support systems, redemption mechanics, and team-based challenges to ensure every student can succeed.</p>
+                <p data-i18n="about_p3">Perfect for middle and high school classrooms, Vocabularia maintains full curriculum alignment while dramatically increasing student engagement and motivation through proven game mechanics and compelling storytelling.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-title">
+                <h2 data-i18n="contact_title">Contact Us</h2>
+            </div>
+            <div class="contact-container">
+                
+                <!-- 1. Email Form -->
+                <form action="https://formspree.io/f/mqkzvqoz" method="POST" class="contact-form">
+                    <div class="form-group">
+                        <label for="name" data-i18n="form_name">Full Name</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" data-i18n="form_email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message" data-i18n="form_message">Message</label>
+                        <textarea id="message" name="message" rows="5" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" data-i18n="form_submit">Send Message</button>
+                </form>
+
+                <!-- 2. Social Links & Info -->
+                <div class="contact-info">
+                    <i class="fa-solid fa-paper-plane contact-icon"></i>
+                    <h3 data-i18n="info_title">Have Questions?</h3>
+                    <p data-i18n="info_desc">Our Guild Masters are ready to assist you on your journey.</p>
+                    
+                    <h3 data-i18n="social_title">Follow Us</h3>
+                    <div class="contact-socials">
+                        <a href="https://wa.me/YOURNUMBER" class="social-btn btn-whatsapp" target="_blank">
+                            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="https://youtube.com/YOURCHANNEL" class="social-btn btn-youtube" target="_blank">
+                            <i class="fa-brands fa-youtube"></i> YouTube
+                        </a>
+                        <a href="https://facebook.com/YOURPAGE" class="social-btn btn-facebook" target="_blank">
+                            <i class="fa-brands fa-facebook"></i> Facebook
+                        </a>
+                        <a href="https://instagram.com/YOURPROFILE" class="social-btn btn-instagram" target="_blank">
+                            <i class="fa-brands fa-instagram"></i> Instagram
+                        </a>
+                        <a href="https://tiktok.com/@YOURPROFILE" class="social-btn btn-tiktok" target="_blank">
+                            <i class="fa-brands fa-tiktok"></i> TikTok
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: white;" data-i18n="brand_name">Vocabularia</div>
+                    <p style="margin-top: 10px;" data-i18n="footer_tagline">A magical realm where words hold true power and Language Wielders master reading, writing, speaking, and listening to defeat the Growing Silence and save communication itself.</p>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_platform_title">Platform</h4>
+                    <p data-i18n="footer_platform_desc" style="color:#d1d5db;">Complete gamification system for classrooms including character cards, XP tracking spreadsheets, quest templates, monster battles, item rewards, and a full implementation guide for teachers.</p>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_connect">Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#"><i class="fa-brands fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright" data-i18n="copyright">&copy; 2025 Vocabularia Demo. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        function flipCard(cardElement) { cardElement.classList.toggle('flipped'); }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('hero-video');
+            const bgMusic = document.getElementById('bgMusic');
+            bgMusic.volume = 0.5;
+
+            function tryPlayMusic() {
+                if (video.paused) {
+                    bgMusic.play().catch(error => console.log("Autoplay prevented."));
+                }
+            }
+
+            video.addEventListener('play', function() { bgMusic.pause(); });
+            video.addEventListener('pause', tryPlayMusic);
+            video.addEventListener('ended', tryPlayMusic);
+
+            document.body.addEventListener('click', function() {
+                if (video.paused && bgMusic.paused) { bgMusic.play(); }
+            }, { once: true });
+        });
+
+        const translations = {
+            en: {
+                brand_name: "Vocabularia",
+                nav_library: "Library",
+                nav_features: "Features",
+                nav_community: "Community",
+                nav_about: "About",
+                nav_contact: "Contact",
+                btn_start: "Start Reading",
+                
+                hero_title: "Transform Learning Into An <br><span>Epic Adventure Game</span>",
+                hero_desc: "Students become heroes in Vocabularia, earning XP through reading, writing, speaking, and listening quests while battling monsters, collecting magical items, and leveling up from Novice Scribe to Supreme Word Wielder.",
+                btn_join: "Join the Quest",
+                
+                features_title: "Why Choose Vocabularia?",
+                hint_flip: "Click to Flip",
+                
+                card1_title: "Complete Curriculum Integration",
+                card1_back_title: "Standards Aligned",
+                card1_desc: "Every quest aligns with standard learning objectives. Grammar worksheets become monster battles, essays turn into epic expeditions, all while meeting educational standards.",
+                
+                card2_title: "Proven Engagement System",
+                card2_back_title: "Motivation",
+                card2_desc: "Transform reluctant learners into motivated heroes. Students eagerly complete homework \"quests\" and participate in class \"battles,\" turning ordinary assignments into exciting adventures they actually want to complete.",
+                
+                card3_title: "Flexible & Scalable Design",
+                card3_back_title: "Customizable",
+                card3_desc: "Adapts to any classroom size, student level, or teaching style. Start simple with just XP and levels, then gradually add characters, monsters, and items as you grow comfortable with the system.",
+                
+                card4_title: "Built-In Support & Recovery",
+                card4_back_title: "No One Left Behind",
+                card4_desc: "No student left behind with automatic redemption quests, peer mentorship systems, and scaffolded challenges. When students struggle, the game provides paths to success rather than punishing failure.",
+
+                about_title: "About The Platform",
+                about_p1: "Vocabularia transforms traditional learning into an immersive role-playing game where students become Wielders in the magical realm of Vocabularia. Every classroom activity earns experience points that help students level up, unlock special abilities, and collect powerful items.",
+                about_p2: "Choose from six character classes like Scholar Mage or Dialogue Diplomat, each with unique strengths. Battle monsters representing learning challenges, complete epic weekly quests, and develop your character through a sophisticated stat system. The game includes built-in support systems, redemption mechanics, and team-based challenges to ensure every student can succeed.",
+                about_p3: "Perfect for middle and high school classrooms, Vocabularia maintains full curriculum alignment while dramatically increasing student engagement and motivation through proven game mechanics and compelling storytelling.",
+
+                contact_title: "Contact Us",
+                form_name: "Full Name",
+                form_email: "Email Address",
+                form_message: "Message",
+                form_submit: "Send Message",
+                info_title: "Have Questions?",
+                info_desc: "Our Guild Masters are ready to assist you on your journey.",
+                social_title: "Follow Us",
+
+                footer_tagline: "A magical realm where words hold true power and Language Wielders master reading, writing, speaking, and listening to defeat the Growing Silence and save communication itself.",
+                footer_platform_title: "Platform",
+                footer_platform_desc: "Complete gamification system for classrooms including character cards, XP tracking spreadsheets, quest templates, monster battles, item rewards, and a full implementation guide for teachers.",
+                footer_connect: "Connect",
+                copyright: "&copy; 2025 Vocabularia Demo. All rights reserved."
+            },
+            ar: {
+                brand_name: "فوكابيولاريا",
+                nav_library: "المكتبة",
+                nav_features: "المميزات",
+                nav_community: "المجتمع",
+                nav_about: "عن المنصة",
+                nav_contact: "تواصل معنا",
+                btn_start: "ابدأ القراءة",
+                
+                hero_title: "حوّل التعلم إلى <br><span>لعبة مغامرات ملحمية</span>",
+                hero_desc: "يتحول الطلاب إلى أبطال في فوكابيولاريا، حيث يكتسبون نقاط الخبرة (XP) من خلال مهام القراءة والكتابة والتحدث والاستماع، بينما يقاتلون الوحوش ويجمعون العناصر السحرية ويرتقون من كاتب مبتدئ إلى مستخدم كلمات أعلى.",
+                btn_join: "انضم للمغامرة",
+                
+                features_title: "لماذا تختار فوكابيولاريا؟",
+                hint_flip: "اضغط للقلب",
+
+                card1_title: "تكامل كامل مع المنهج",
+                card1_back_title: "متوافق مع المعايير",
+                card1_desc: "تتماشى كل مهمة مع أهداف التعلم القياسية. تتحول أوراق عمل القواعد إلى معارك وحوش، والمقالات إلى رحلات استكشافية ملحمية، كل ذلك مع تلبية المعايير التعليمية.",
+
+                card2_title: "نظام تفاعل مثبت",
+                card2_back_title: "تحفيز",
+                card2_desc: "حوّل المتعلمين المترددين إلى أبطال متحمسين. يكمل الطلاب 'مهام' الواجبات المنزلية بشغف ويشاركون في 'معارك' الفصل، مما يحول الواجبات العادية إلى مغامرات مثيرة يرغبون حقًا في إكمالها.",
+
+                card3_title: "تصميم مرن وقابل للتطوير",
+                card3_back_title: "قابل للتخصيص",
+                card3_desc: "يتكيف مع أي حجم فصل دراسي، أو مستوى طالب، أو أسلوب تدريس. ابدأ ببساطة باستخدام نقاط الخبرة (XP) والمستويات فقط، ثم أضف تدريجيًا الشخصيات والوحوش والعناصر مع ازدياد راحتك في استخدام النظام.",
+
+                card4_title: "دعم واستعادة مدمجة",
+                card4_back_title: "لن يُترك أحد",
+                card4_desc: "لن يُترك أي طالب في الخلف بفضل مهام الاسترداد التلقائية، وأنظمة توجيه الأقران، والتحديات المتدرجة. عندما يواجه الطلاب صعوبة، توفر اللعبة مسارات للنجاح بدلاً من معاقبة الفشل.",
+
+                about_title: "عن المنصة",
+                about_p1: "تحول فوكابيولاريا التعليم التقليدي إلى لعبة تقمص أدوار غامرة حيث يصبح الطلاب 'مستخدمين' (Wielders) في عالم فوكابيولاريا السحري. كل نشاط في الفصل الدراسي يكسب نقاط خبرة تساعد الطلاب على رفع مستواهم، وفتح قدرات خاصة، وجمع عناصر قوية.",
+                about_p2: "اختر من بين ست فئات للشخصيات مثل الساحر العالم أو دبلوماسي الحوار، ولكل منها نقاط قوة فريدة. قاتل الوحوش التي تمثل تحديات التعلم، وأكمل المهام الأسبوعية الملحمية، وطور شخصيتك من خلال نظام إحصائيات متطور. تتضمن اللعبة أنظمة دعم مدمجة، وآليات للتعويض، وتحديات جماعية لضمان نجاح كل طالب.",
+                about_p3: "مثالية للفصول الدراسية في المرحلتين الإعدادية والثانوية، تحافظ 'فوكابيولاريا' على التوافق الكامل مع المناهج الدراسية مع زيادة مشاركة الطلاب وتحفيزهم بشكل كبير من خلال آليات الألعاب المثبتة والسرد القصصي المقنع.",
+
+                contact_title: "تواصل معنا",
+                form_name: "الاسم الكامل",
+                form_email: "البريد الإلكتروني",
+                form_message: "الرسالة",
+                form_submit: "إرسال الرسالة",
+                info_title: "لديك أسئلة؟",
+                info_desc: "سادة النقابة مستعدون لمساعدتك في رحلتك.",
+                social_title: "تابعنا",
+
+                footer_tagline: "مملكة سحرية حيث تمتلك الكلمات قوة حقيقية، ويتقن مستخدمو اللغة القراءة والكتابة والتحدث والاستماع لهزيمة الصمت المتزايد وإنقاذ التواصل نفسه.",
+                footer_platform_title: "المنصة",
+                footer_platform_desc: "نظام تلعيب كامل للفصول الدراسية يتضمن بطاقات الشخصيات، وجداول تتبع نقاط الخبرة، وقوالب المهام، ومعارك الوحوش، ومكافآت العناصر، ودليل تنفيذ كامل للمعلمين.",
+                footer_connect: "تواصل معنا",
+                copyright: "&copy; 2025 فوكابيولاريا ديمو. جميع الحقوق محفوظة."
+            }
+        };
+
+        let currentLang = 'en';
+
+        function toggleLanguage() {
+            const body = document.getElementById('page-body');
+            const langBtn = document.getElementById('lang-btn');
+            
+            if (currentLang === 'en') {
+                currentLang = 'ar';
+                body.classList.add('rtl'); 
+                langBtn.textContent = 'English';
+            } else {
+                currentLang = 'en';
+                body.classList.remove('rtl');
+                langBtn.textContent = 'عربي';
+            }
+
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    element.innerHTML = translations[currentLang][key];
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabularia - Authentication</title>
+    <!-- Google Fonts: Poppins (English) and Cairo (Arabic) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* --- CSS Variables --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --accent: #fbbf24;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --white: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        /* --- Background Setup --- */
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            position: relative;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* Arabic Specific Styles */
+        body.rtl {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body.rtl .logo span { letter-spacing: 0; }
+        body.rtl .logo img { margin-right: 0; margin-left: 10px; }
+        body.rtl .nav-links li { margin-left: 0; margin-right: 25px; }
+        body.rtl .form-group { text-align: right; }
+        body.rtl .auth-switch-btn { flex-direction: row-reverse; }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('Reading scene.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.7; 
+            z-index: -1;
+            background-color: #f3f4f6;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            white-space: nowrap;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(79, 70, 229, 0.1);
+        }
+
+        /* Social Buttons */
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 44px;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-google { color: #333; }
+        .btn-facebook { color: #1877F2; border-color: #1877F2; }
+        .btn-instagram { 
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+            color: white;
+            border: none;
+        }
+
+        /* Lang Button */
+        .lang-btn {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 15px;
+            margin-right: 10px;
+            font-size: 0.9rem;
+            min-height: 44px;
+        }
+        
+        body.rtl .lang-btn { margin-right: 0; margin-left: 10px; }
+        .lang-btn:hover { background: var(--primary); color: white; }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 40px; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo img { height: 50px; width: auto; }
+        .logo span { font-size: 1.5rem; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
+
+        .nav-links { display: flex; }
+        .nav-links li { margin-left: 25px; }
+        .nav-links a { font-weight: 500; color: var(--text-light); transition: color 0.3s; position: relative; }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-actions { display: flex; align-items: center; gap: 15px; }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* --- Auth Section --- */
+        .auth-section {
+            padding: 60px 0 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 200px);
+        }
+
+        .auth-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-title {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .auth-subtitle {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        /* Auth Toggle */
+        .auth-toggle {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+
+        .auth-switch-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+        }
+
+        .auth-switch-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        /* Form Styles */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            z-index: 1;
+        }
+
+        body.rtl .input-with-icon i {
+            left: auto;
+            right: 15px;
+        }
+
+        .input-with-icon input,
+        .input-with-icon select {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        body.rtl .input-with-icon input,
+        body.rtl .input-with-icon select {
+            padding: 15px 45px 15px 15px;
+        }
+
+        .input-with-icon input:focus,
+        .input-with-icon select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        body.rtl .password-toggle {
+            right: auto;
+            left: 15px;
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 5px;
+            height: 5px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .strength-weak { background-color: var(--error); width: 25%; }
+        .strength-fair { background-color: var(--warning); width: 50%; }
+        .strength-good { background-color: #fbbf24; width: 75%; }
+        .strength-strong { background-color: var(--success); width: 100%; }
+
+        /* Checkbox Styles */
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            min-width: 18px;
+            min-height: 18px;
+            margin-top: 3px;
+        }
+
+        .checkbox-group label {
+            font-weight: normal;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .checkbox-group a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        /* Form Options */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .remember-forgot {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-options a {
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        /* Social Login */
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .message-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .message-info {
+            background-color: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hidden Form */
+        .form-hidden {
+            display: none;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+        }
+
+        .form-visible {
+            display: flex;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* --- About Section --- */
+        .about { background-color: var(--glass-bg); padding: 80px 0; text-align: center; backdrop-filter: blur(5px); }
+        .about-content { max-width: 900px; margin: 0 auto; }
+        .about-content p { margin-bottom: 25px; font-size: 1.1rem; color: var(--text-light); text-align: left; }
+        body.rtl .about-content p { text-align: right; }
+
+        /* --- Footer --- */
+        footer { background-color: #111827; color: #d1d5db; padding: 50px 0 20px; margin-top: 0; }
+        .footer-grid { display: grid; grid-template-columns: 1.2fr 1.2fr 0.6fr; gap: 50px; margin-bottom: 40px; }
+        .footer-col h4 { color: var(--white); margin-bottom: 20px; }
+        .footer-col p { font-size: 0.95rem; line-height: 1.6; }
+        .social-links { display: flex; gap: 15px; margin-top: 15px; }
+        .copyright { text-align: center; border-top: 1px solid #374151; padding-top: 20px; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .nav-links { 
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--glass-bg);
+                backdrop-filter: blur(8px);
+                flex-direction: column;
+                padding: 20px;
+                box-shadow: var(--shadow);
+                z-index: 1000;
+            }
+            
+            body.rtl .nav-links {
+                left: auto;
+                right: 0;
+            }
+            
+            .nav-links.active { display: flex; }
+            .nav-links li { margin: 10px 0; }
+            .mobile-menu-btn { display: block; }
+            .auth-container { padding: 30px 20px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 30px; }
+            .form-options { flex-direction: column; gap: 15px; align-items: flex-start; }
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 0 15px; }
+            .auth-container { padding: 20px 15px; }
+            .auth-toggle { flex-direction: column; }
+            .social-btn { font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 320px) {
+            .auth-title { font-size: 1.5rem; }
+            .btn { padding: 10px 15px; }
+        }
+    </style>
+</head>
+<body id="page-body">
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <nav>
+                <div class="nav-left">
+                    <a href="ai_studio_code.html" class="logo">
+                        <img src="logo.png" alt="Vocabularia Logo">
+                        <span data-i18n="brand_name">Vocabularia</span>
+                    </a>
+                    <ul class="nav-links" id="navLinks">
+                        <li><a href="ai_studio_code.html#library" data-i18n="nav_library">Library</a></li>
+                        <li><a href="ai_studio_code.html#features" data-i18n="nav_features">Features</a></li>
+                        <li><a href="ai_studio_code.html#community" data-i18n="nav_community">Community</a></li>
+                        <li><a href="ai_studio_code.html#about" data-i18n="nav_about">About</a></li>
+                        <li><a href="ai_studio_code.html#contact" data-i18n="nav_contact">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-actions">
+                    <button class="btn lang-btn" onclick="toggleLanguage()" id="lang-btn">عربي</button>
+                    <a href="ai_studio_code.html" class="btn btn-secondary" data-i18n="btn_home">Back to Home</a>
+                </div>
+                
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Auth Section -->
+    <section class="auth-section">
+        <div class="container">
+            <div class="auth-container">
+                <!-- Auth Header -->
+                <div class="auth-header">
+                    <h1 class="auth-title" data-i18n="auth_title">Join the Quest</h1>
+                    <p class="auth-subtitle" data-i18n="auth_subtitle">Become a Word Wielder in Vocabularia</p>
+                </div>
+
+                <!-- Auth Toggle -->
+                <div class="auth-toggle">
+                    <button class="auth-switch-btn active" id="loginTab" onclick="switchAuthMode('login')">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span data-i18n="auth_login">Login</span>
+                    </button>
+                    <button class="auth-switch-btn" id="registerTab" onclick="switchAuthMode('register')">
+                        <i class="fas fa-user-plus"></i>
+                        <span data-i18n="auth_register">Register</span>
+                    </button>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="messageContainer"></div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form form-visible">
+                    <div class="form-group">
+                        <label for="loginIdentifier">
+                            <i class="fas fa-envelope"></i>
+                            <span data-i18n="form_email_phone">Email or Phone Number</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="loginIdentifier" name="loginIdentifier" required
+                                   placeholder="you@example.com or +1234567890">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">
+                            <i class="fas fa-lock"></i>
+                            <span data-i18n="form_password">Password</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" name="loginPassword" required
+                                   placeholder="••••••••">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <div class="remember-forgot">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <label for="rememberMe" data-i18n="form_remember">Remember me</label>
+                        </div>
+                        <a href="#forgot-password" onclick="showForgotPassword()" data-i18n="form_forgot">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="loginBtn">
+                        <span data-i18n="btn_login">Enter Vocabularia</span>
+                    </button>
+
+                    <div class="divider">
+                        <span data-i18n="divider_or">OR</span>
+                    </div>
+
+                    <div class="social-login">
+                        <button type="button" class="social-btn btn-google" onclick="socialLogin('google')">
+                            <i class="fab fa-google"></i>
+                            <span data-i18n="btn_google">Continue with Google</span>
+                        </button>
+                        <button type="button" class="social-btn btn-facebook" onclick="socialLogin('facebook')">
+                            <i class="fab fa-facebook-f"></i>
+                            <span data-i18n="btn_facebook">Continue with Facebook</span>
+                        </button>
+                        <button type="button" class="social-btn btn-instagram" onclick="socialLogin('instagram')">
+                            <i class="fab fa-instagram"></i>
+                            <span data-i18n="btn_instagram">Continue with Instagram</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="registerForm" class="auth-form form-hidden">
+                    <div class="form-group">
+                        <label for="registerName">
+                            <i class="fas fa-user"></i>
+                            <span data-i18n="form_name">Full Name</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="registerName" name="registerName" required
+                                   placeholder="John Doe">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-address-book"></i>
+                            <span data-i18n="form_contact_method">Contact Method</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone-alt"></i>
+                            <select id="contactMethod" name="contactMethod" onchange="toggleContactInput()">
+                                <option value="email" data-i18n="option_email">Email</option>
+                                <option value="phone" data-i18n="option_phone">Phone Number</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="contactLabel" for="registerContact">
+                            <i class="fas fa-envelope"></i>
+                            <span data-i18n="form_email">Email Address</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-envelope" id="contactIcon"></i>
+                            <input type="email" id="registerContact" name="registerContact" required
+                                   placeholder="you@example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword">
+                            <i class="fas fa-lock"></i>
+                            <span data-i18n="form_password">Password</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="registerPassword" name="registerPassword" required
+                                   placeholder="••••••••" oninput="checkPasswordStrength()">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('registerPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar" id="passwordStrength"></div>
+                        </div>
+                        <small id="passwordHint" data-i18n="password_hint">Use at least 8 characters with letters and numbers</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">
+                            <i class="fas fa-lock"></i>
+                            <span data-i18n="form_confirm_password">Confirm Password</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required
+                                   placeholder="••••••••">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="termsAgreement" name="termsAgreement" required>
+                        <label for="termsAgreement">
+                            <span data-i18n="form_terms">I agree to the</span>
+                            <a href="#" data-i18n="form_terms_link">Terms & Conditions</a>
+                            <span data-i18n="form_and">and</span>
+                            <a href="#" data-i18n="form_privacy_link">Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="registerBtn">
+                        <span data-i18n="btn_register">Join the Quest</span>
+                    </button>
+
+                    <div class="divider">
+                        <span data-i18n="divider_or">OR</span>
+                    </div>
+
+                    <div class="social-login">
+                        <button type="button" class="social-btn btn-google" onclick="socialLogin('google')">
+                            <i class="fab fa-google"></i>
+                            <span data-i18n="btn_google">Continue with Google</span>
+                        </button>
+                        <button type="button" class="social-btn btn-facebook" onclick="socialLogin('facebook')">
+                            <i class="fab fa-facebook-f"></i>
+                            <span data-i18n="btn_facebook">Continue with Facebook</span>
+                        </button>
+                        <button type="button" class="social-btn btn-instagram" onclick="socialLogin('instagram')">
+                            <i class="fab fa-instagram"></i>
+                            <span data-i18n="btn_instagram">Continue with Instagram</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Forgot Password Form (Hidden by default) -->
+                <form id="forgotPasswordForm" class="auth-form form-hidden">
+                    <div class="form-group">
+                        <label for="resetEmail">
+                            <i class="fas fa-envelope"></i>
+                            <span data-i18n="form_reset_email">Enter your email address</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="resetEmail" name="resetEmail" required
+                                   placeholder="you@example.com">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="resetBtn">
+                        <span data-i18n="btn_reset">Send Reset Link</span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-secondary" onclick="switchAuthMode('login')">
+                        <span data-i18n="btn_back_login">Back to Login</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: white;" data-i18n="brand_name">Vocabularia</div>
+                    <p style="margin-top: 10px;" data-i18n="footer_tagline">A magical realm where words hold true power and Language Wielders master reading, writing, speaking, and listening to defeat the Growing Silence and save communication itself.</p>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_platform_title">Platform</h4>
+                    <p data-i18n="footer_platform_desc" style="color:#d1d5db;">Complete gamification system for classrooms including character cards, XP tracking spreadsheets, quest templates, monster battles, item rewards, and a full implementation guide for teachers.</p>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer_connect">Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#"><i class="fa-brands fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright" data-i18n="copyright">&copy; 2025 Vocabularia Demo. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // =============== SUPABASE SETUP ===============
+        // Replace with your Supabase project URL and anon key
+        const SUPABASE_URL = 'https://syrhuxxryctrzjdzexnx.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_f26IxnkhOy0ckfJ7hFHCrA_NcSnN0Al';
+        
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Check if Supabase is properly initialized
+        if (!supabase) {
+            console.error('Supabase client failed to initialize');
+            showMessage('Authentication service is currently unavailable. Please try again later.', 'error');
+        }
+
+        // =============== STATE MANAGEMENT ===============
+        let currentAuthMode = 'login';
+        let currentLang = 'en';
+
+        // =============== DOM ELEMENTS ===============
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const messageContainer = document.getElementById('messageContainer');
+        const contactMethod = document.getElementById('contactMethod');
+        const registerContact = document.getElementById('registerContact');
+        const contactLabel = document.getElementById('contactLabel');
+        const contactIcon = document.getElementById('contactIcon');
+
+        // =============== FORM SWITCHING ===============
+        function switchAuthMode(mode) {
+            currentAuthMode = mode;
+            
+            // Update active tab
+            loginTab.classList.toggle('active', mode === 'login');
+            registerTab.classList.toggle('active', mode === 'register');
+            
+            // Show/hide forms with animation
+            if (mode === 'login') {
+                loginForm.classList.remove('form-hidden');
+                loginForm.classList.add('form-visible');
+                registerForm.classList.remove('form-visible');
+                registerForm.classList.add('form-hidden');
+                forgotPasswordForm.classList.remove('form-visible');
+                forgotPasswordForm.classList.add('form-hidden');
+            } else if (mode === 'register') {
+                registerForm.classList.remove('form-hidden');
+                registerForm.classList.add('form-visible');
+                loginForm.classList.remove('form-visible');
+                loginForm.classList.add('form-hidden');
+                forgotPasswordForm.classList.remove('form-visible');
+                forgotPasswordForm.classList.add('form-hidden');
+            }
+            
+            // Clear messages
+            clearMessages();
+        }
+
+        function showForgotPassword() {
+            currentAuthMode = 'forgot';
+            loginForm.classList.remove('form-visible');
+            loginForm.classList.add('form-hidden');
+            registerForm.classList.remove('form-visible');
+            registerForm.classList.add('form-hidden');
+            forgotPasswordForm.classList.remove('form-hidden');
+            forgotPasswordForm.classList.add('form-visible');
+            
+            // Update tabs
+            loginTab.classList.remove('active');
+            registerTab.classList.remove('active');
+            
+            clearMessages();
+        }
+
+        // =============== FORM VALIDATION ===============
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePhone(phone) {
+            const re = /^\+?[1-9]\d{1,14}$/;
+            return re.test(phone.replace(/\D/g, ''));
+        }
+
+        function validatePassword(password) {
+            // At least 8 characters, contains letter and number
+            const re = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+            return re.test(password);
+        }
+
+        function checkPasswordStrength() {
+            const password = document.getElementById('registerPassword').value;
+            const strengthBar = document.getElementById('passwordStrength');
+            
+            if (password.length === 0) {
+                strengthBar.className = 'strength-bar';
+                strengthBar.style.width = '0%';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 8) strength += 25;
+            if (/[a-z]/.test(password)) strength += 25;
+            if (/[A-Z]/.test(password)) strength += 25;
+            if (/\d/.test(password)) strength += 25;
+            
+            strengthBar.style.width = strength + '%';
+            
+            if (strength <= 25) {
+                strengthBar.className = 'strength-bar strength-weak';
+            } else if (strength <= 50) {
+                strengthBar.className = 'strength-bar strength-fair';
+            } else if (strength <= 75) {
+                strengthBar.className = 'strength-bar strength-good';
+            } else {
+                strengthBar.className = 'strength-bar strength-strong';
+            }
+        }
+
+        // =============== PASSWORD VISIBILITY TOGGLE ===============
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const toggleBtn = field.nextElementSibling;
+            const icon = toggleBtn.querySelector('i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // =============== CONTACT METHOD TOGGLE ===============
+        function toggleContactInput() {
+            const method = contactMethod.value;
+            const contactInput = registerContact;
+            
+            if (method === 'email') {
+                contactInput.type = 'email';
+                contactInput.placeholder = 'you@example.com';
+                contactLabel.innerHTML = '<i class="fas fa-envelope"></i><span data-i18n="form_email">Email Address</span>';
+                contactIcon.className = 'fas fa-envelope';
+            } else {
+                contactInput.type = 'tel';
+                contactInput.placeholder = '+1234567890';
+                contactLabel.innerHTML = '<i class="fas fa-phone"></i><span data-i18n="form_phone">Phone Number</span>';
+                contactIcon.className = 'fas fa-phone';
+            }
+            
+            // Update translations if needed
+            updateTranslations();
+        }
+
+        // =============== MESSAGE DISPLAY ===============
+        function showMessage(text, type = 'info') {
+            clearMessages();
+            
+            const message = document.createElement('div');
+            message.className = `message message-${type}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            
+            message.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${text}</span>
+            `;
+            
+            messageContainer.appendChild(message);
+            
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (message.parentNode) {
+                        message.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        function clearMessages() {
+            messageContainer.innerHTML = '';
+        }
+
+        // =============== LOADING STATE ===============
+        function setLoading(button, isLoading) {
+            const originalText = button.innerHTML;
+            
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = '<div class="spinner"></div>';
+            } else {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        // =============== AUTHENTICATION FUNCTIONS ===============
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const identifier = document.getElementById('loginIdentifier').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            // Basic validation
+            if (!identifier || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            setLoading(loginBtn, true);
+            
+            try {
+                // Determine if identifier is email or phone
+                let authData;
+                if (validateEmail(identifier)) {
+                    authData = { email: identifier, password };
+                } else if (validatePhone(identifier)) {
+                    authData = { phone: identifier, password };
+                } else {
+                    showMessage('Please enter a valid email or phone number', 'error');
+                    setLoading(loginBtn, false);
+                    return;
+                }
+                
+                // Sign in with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword(authData);
+                
+                if (error) throw error;
+                
+                showMessage('Login successful! Redirecting...', 'success');
+                
+                // Redirect to dashboard after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                let errorMessage = 'Login failed. ';
+                if (error.message.includes('Invalid login credentials')) {
+                    errorMessage += 'Invalid email/phone or password.';
+                } else if (error.message.includes('Email not confirmed')) {
+                    errorMessage += 'Please verify your email address first.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showMessage(errorMessage, 'error');
+            } finally {
+                setLoading(loginBtn, false);
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('registerName').value.trim();
+            const contactMethodValue = contactMethod.value;
+            const contact = document.getElementById('registerContact').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const termsAgreed = document.getElementById('termsAgreement').checked;
+            const registerBtn = document.getElementById('registerBtn');
+            
+            // Validation
+            if (!name || !contact || !password || !confirmPassword) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (!termsAgreed) {
+                showMessage('Please agree to the terms and conditions', 'error');
+                return;
+            }
+            
+            if (!validatePassword(password)) {
+                showMessage('Password must be at least 8 characters with letters and numbers', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (contactMethodValue === 'email' && !validateEmail(contact)) {
+                showMessage('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            if (contactMethodValue === 'phone' && !validatePhone(contact)) {
+                showMessage('Please enter a valid phone number', 'error');
+                return;
+            }
+            
+            setLoading(registerBtn, true);
+            
+            try {
+                // Prepare user data
+                let userData = {
+                    password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            phone: contactMethodValue === 'phone' ? contact : null
+                        }
+                    }
+                };
+                
+                // Add email or phone based on selection
+                if (contactMethodValue === 'email') {
+                    userData.email = contact;
+                } else {
+                    userData.phone = contact;
+                }
+                
+                // Sign up with Supabase
+                const { data, error } = await supabase.auth.signUp(userData);
+                
+                if (error) throw error;
+                
+                // Success message
+                let successMessage = 'Registration successful! ';
+                if (contactMethodValue === 'email') {
+                    successMessage += 'Please check your email to verify your account.';
+                } else {
+                    successMessage += 'You can now login with your phone number.';
+                }
+                
+                showMessage(successMessage, 'success');
+                
+                // Switch to login form after 3 seconds
+                setTimeout(() => {
+                    switchAuthMode('login');
+                    // Clear form
+                    document.getElementById('registerForm').reset();
+                    document.getElementById('passwordStrength').style.width = '0%';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                
+                let errorMessage = 'Registration failed. ';
+                if (error.message.includes('User already registered')) {
+                    errorMessage += 'An account with this email/phone already exists.';
+                } else if (error.message.includes('password')) {
+                    errorMessage += 'Password is too weak.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showMessage(errorMessage, 'error');
+            } finally {
+                setLoading(registerBtn, false);
+            }
+        }
+
+        async function handleForgotPassword(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('resetEmail').value.trim();
+            const resetBtn = document.getElementById('resetBtn');
+            
+            if (!email || !validateEmail(email)) {
+                showMessage('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            setLoading(resetBtn, true);
+            
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password.html`,
+                });
+                
+                if (error) throw error;
+                
+                showMessage('Password reset instructions sent to your email', 'success');
+                
+                // Clear form
+                document.getElementById('resetEmail').value = '';
+                
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showMessage('Failed to send reset instructions. Please try again.', 'error');
+            } finally {
+                setLoading(resetBtn, false);
+            }
+        }
+
+        async function socialLogin(provider) {
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: provider,
+                    options: {
+                        redirectTo: `${window.location.origin}/dashboard.html`
+                    }
+                });
+                
+                if (error) throw error;
+                
+            } catch (error) {
+                console.error('Social login error:', error);
+                showMessage(`Failed to login with ${provider}. Please try another method.`, 'error');
+            }
+        }
+
+        // =============== LANGUAGE SUPPORT ===============
+        const translations = {
+            en: {
+                brand_name: "Vocabularia",
+                nav_library: "Library",
+                nav_features: "Features",
+                nav_community: "Community",
+                nav_about: "About",
+                nav_contact: "Contact",
+                btn_home: "Back to Home",
+                
+                auth_title: "Join the Quest",
+                auth_subtitle: "Become a Word Wielder in Vocabularia",
+                auth_login: "Login",
+                auth_register: "Register",
+                
+                form_email_phone: "Email or Phone Number",
+                form_password: "Password",
+                form_remember: "Remember me",
+                form_forgot: "Forgot Password?",
+                form_name: "Full Name",
+                form_contact_method: "Contact Method",
+                form_email: "Email Address",
+                form_phone: "Phone Number",
+                form_confirm_password: "Confirm Password",
+                form_terms: "I agree to the",
+                form_terms_link: "Terms & Conditions",
+                form_and: "and",
+                form_privacy_link: "Privacy Policy",
+                form_reset_email: "Enter your email address",
+                
+                option_email: "Email",
+                option_phone: "Phone Number",
+                
+                password_hint: "Use at least 8 characters with letters and numbers",
+                
+                btn_login: "Enter Vocabularia",
+                btn_register: "Join the Quest",
+                btn_reset: "Send Reset Link",
+                btn_back_login: "Back to Login",
+                btn_google: "Continue with Google",
+                btn_facebook: "Continue with Facebook",
+                btn_instagram: "Continue with Instagram",
+                
+                divider_or: "OR",
+                
+                footer_tagline: "A magical realm where words hold true power and Language Wielders master reading, writing, speaking, and listening to defeat the Growing Silence and save communication itself.",
+                footer_platform_title: "Platform",
+                footer_platform_desc: "Complete gamification system for classrooms including character cards, XP tracking spreadsheets, quest templates, monster battles, item rewards, and a full implementation guide for teachers.",
+                footer_connect: "Connect",
+                copyright: "&copy; 2025 Vocabularia Demo. All rights reserved."
+            },
+            ar: {
+                brand_name: "فوكابيولاريا",
+                nav_library: "المكتبة",
+                nav_features: "المميزات",
+                nav_community: "المجتمع",
+                nav_about: "عن المنصة",
+                nav_contact: "تواصل معنا",
+                btn_home: "العودة للرئيسية",
+                
+                auth_title: "انضم للمغامرة",
+                auth_subtitle: "كن مستخدم كلمات في فوكابيولاريا",
+                auth_login: "تسجيل الدخول",
+                auth_register: "تسجيل جديد",
+                
+                form_email_phone: "البريد الإلكتروني أو رقم الهاتف",
+                form_password: "كلمة المرور",
+                form_remember: "تذكرني",
+                form_forgot: "نسيت كلمة المرور؟",
+                form_name: "الاسم الكامل",
+                form_contact_method: "طريقة الاتصال",
+                form_email: "البريد الإلكتروني",
+                form_phone: "رقم الهاتف",
+                form_confirm_password: "تأكيد كلمة المرور",
+                form_terms: "أوافق على",
+                form_terms_link: "الشروط والأحكام",
+                form_and: "و",
+                form_privacy_link: "سياسة الخصوصية",
+                form_reset_email: "أدخل بريدك الإلكتروني",
+                
+                option_email: "البريد الإلكتروني",
+                option_phone: "رقم الهاتف",
+                
+                password_hint: "استخدم 8 أحرف على الأقل مع حروف وأرقام",
+                
+                btn_login: "ادخل فوكابيولاريا",
+                btn_register: "انضم للمغامرة",
+                btn_reset: "إرسال رابط إعادة التعيين",
+                btn_back_login: "العودة للتسجيل",
+                btn_google: "المتابعة مع جوجل",
+                btn_facebook: "المتابعة مع فيسبوك",
+                btn_instagram: "المتابعة مع إنستغرام",
+                
+                divider_or: "أو",
+                
+                footer_tagline: "مملكة سحرية حيث تمتلك الكلمات قوة حقيقية، ويتقن مستخدمو اللغة القراءة والكتابة والتحدث والاستماع لهزيمة الصمت المتزايد وإنقاذ التواصل نفسه.",
+                footer_platform_title: "المنصة",
+                footer_platform_desc: "نظام تلعيب كامل للفصول الدراسية يتضمن بطاقات الشخصيات، وجداول تتبع نقاط الخبرة، وقوالب المهام، ومعارك الوحوش، ومكافآت العناصر، ودليل تنفيذ كامل للمعلمين.",
+                footer_connect: "تواصل معنا",
+                copyright: "&copy; 2025 فوكابيولاريا ديمو. جميع الحقوق محفوظة."
+            }
+        };
+
+        function toggleLanguage() {
+            const body = document.getElementById('page-body');
+            const langBtn = document.getElementById('lang-btn');
+            
+            if (currentLang === 'en') {
+                currentLang = 'ar';
+                body.classList.add('rtl');
+                langBtn.textContent = 'English';
+            } else {
+                currentLang = 'en';
+                body.classList.remove('rtl');
+                langBtn.textContent = 'عربي';
+            }
+            
+            updateTranslations();
+        }
+
+        function updateTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    // Preserve HTML structure for elements with inner HTML
+                    if (element.hasChildNodes() && element.children.length > 0) {
+                        const child = element.querySelector('span');
+                        if (child) {
+                            child.textContent = translations[currentLang][key];
+                        } else {
+                            element.textContent = translations[currentLang][key];
+                        }
+                    } else {
+                        element.textContent = translations[currentLang][key];
+                    }
+                }
+            });
+        }
+
+        // =============== MOBILE MENU ===============
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
+        // =============== INITIALIZATION ===============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up form submissions
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+            forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+            
+            // Check for existing session
+            checkAuthSession();
+            
+            // Initialize translations
+            updateTranslations();
+        });
+
+        async function checkAuthSession() {
+            try {
+                const { data } = await supabase.auth.getSession();
+                if (data.session) {
+                    // User is already logged in, redirect to dashboard
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (error) {
+                console.error('Session check error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
